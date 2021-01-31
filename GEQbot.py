@@ -10,8 +10,8 @@ from telegram.ext import (
 )
 
 #Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
-                     level=logging.INFO)
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+                    level=logging.INFO)
 
 
 #GLOBAL VARIABLES
@@ -21,14 +21,20 @@ userdict = {}
 
 #CONSTANTS
 #"Enums" for conversationHandler's Dictionary
-ACTION, GETTITLE, GETTEXT, GENERATETEXT, SENDING, POSTTOMANAGE, TYPEERROR, MANAGEPOST, DELETEPOST, EDITPREVIEW, EDIT = range(11)
+ACTION, GETTITLE, GETTEXT, GENERATETEXT, SENDING, POSTTOMANAGE, TYPEERROR, MANAGEPOST, DELETEPOST, EDITPREVIEW, EDIT, ASKFORPHOTO = range(12)
 
+# #Channel ID to forward messages to, bot must be Admin in the channel
+# CHANNELID = -1001475820789
+# CHANNELLINKID = 1475820789 #ChannelID without the -100
+# #Token for the bot
+# TOKEN = '1669722724:AAFzI4ueHRznyydSWylmtSkI4Wm7g2exRMI'
+
+#Test
 #Channel ID to forward messages to, bot must be Admin in the channel
 CHANNELID = -1001306746114
 CHANNELLINKID = 1306746114 #ChannelID without the -100
 #Token for the bot
 TOKEN = '1532597200:AAGGlFLs0VEPqnMLdfy7qh5jXFntuSUs8iI'
-
 
 
 #CLASS(ES)
@@ -49,6 +55,8 @@ class Message:
         self.title = ""
         self.text = ""
         self.id = 0           #id is 0 if it remains unsent; 1 or more otherwise
+        self.photoid = 0
+        self.hasphoto = False
     
     def set_title(self, title):
         self.title = title
@@ -58,6 +66,15 @@ class Message:
 
     def set_id(self, id):
         self.id = id
+
+    def set_hasphoto(self):
+        if self.hasphoto:
+            self.hasphoto = False
+        else:
+            self.hasphoto = True
+
+    def set_photoid(self, photoid):
+        self.photoid = photoid
         
 
     def generateMessage(self):
@@ -129,10 +146,13 @@ def start(update, context) -> int:
     reply_keyboard = [['Make Post', 'Manage Posts']]
     reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
     update.message.reply_text(
-        """Hello {}!
+        """<b>Hello {}!👋</b>
 Got hostel essentials to share or donate? Looking for something in particular?
+
+<b>Type 'Make Post' to send a post to the NUSe channel, and 'Manage Posts' to view and edit your current posts!</b>
+
 Send /cancel to cancel your current process at any time UwU
-        """.format(name), reply_markup = reply_markup)
+        """.format(name),  reply_markup = reply_markup, parse_mode=ParseMode.HTML)
     
     return ACTION
 
@@ -140,7 +160,7 @@ Send /cancel to cancel your current process at any time UwU
 def newpost(update: Update, context: CallbackContext) -> int:
     reply_keyboard = [['Put up item', 'Share item', 'Look for item']]
     reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-    update.message.reply_text("What are you looking to do today?", reply_markup = reply_markup)
+    update.message.reply_text("What are you looking to do today? (Put up item, Share item, Look for item)", reply_markup = reply_markup)
 
     return GETTITLE
 
@@ -166,7 +186,7 @@ def gettitle(update: Update, context: CallbackContext) -> int:
     # Create Message
     userdict[userid].addMessage(type)
 
-    update.message.reply_text("Input the title of your post.")
+    update.message.reply_text("Input the title of your post. (or /cancel)", reply_markup=ReplyKeyboardRemove())
 
     return GETTEXT
 
@@ -185,18 +205,18 @@ def gettext(update: Update, context: CallbackContext) -> int:
     # Update title
     userdict[userid].messageList[-1].set_title(title)
 
-    update.message.reply_text("""<b>Input the text of your post</b>.
+    update.message.reply_text("""<b>Input the text of your post. (or /cancel)</b>
     Recommended format:
         <i>Details: (Condition etc)
         Looking to exchange for: (If applicable)
         Place for collection: (If applicable)
         Status: (If applicable)
         etc</i>
-<b>NOTE: Your username will be automatically added to the post for people to contact you.</b>""", parse_mode=ParseMode.HTML)
+<b>⚠️Your username will be automatically added to the post for people to contact you.</b>⚠️""", parse_mode=ParseMode.HTML)
     
-    return GENERATETEXT
+    return ASKFORPHOTO
 
-def generatetext(update: Update, context: CallbackContext) -> int:
+def askforphoto(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
     text = checkForAngleBrackets(update.message.text)
     userid = user.id
@@ -204,8 +224,31 @@ def generatetext(update: Update, context: CallbackContext) -> int:
     #Update text
     userdict[userid].messageList[-1].set_text(text)
 
+    update.message.reply_text("Do you want to attach a picture along with the post? Send a picture, or /skip this step.")
+    return GENERATETEXT
+
+
+def generatetext(update: Update, context: CallbackContext) -> int:
+    user = update.message.from_user 
+    userid = user.id
+    result = update.message.text       # TESTING, if its a photo, of type None, if not its "/skip"
+    
+    #Update Photo IF ANY
+    if result == None:
+        userdict[userid].messageList[-1].set_hasphoto()
+        photoid = context.bot.getFile(update.message.photo[-1].file_id).file_id
+        userdict[userid].messageList[-1].set_photoid(photoid)
+        update.message.reply_text(photoid)
+
+    text = userdict[userid].messageList[-1].generateMessage() + "<b>Post made by @" + user.username + '</b>'
+
     update.message.reply_text("Your post is: ")
-    update.message.reply_text(userdict[userid].messageList[-1].generateMessage() + "<b>Post made by @" + user.username + '</b>', parse_mode=ParseMode.HTML)
+    if userdict[userid].messageList[-1].hasphoto:
+        photoid = userdict[userid].messageList[-1].photoid
+        context.bot.send_photo(chat_id = update.effective_chat.id, photo = photoid, caption = text, parse_mode=ParseMode.HTML)
+    else:
+        update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
     update.message.reply_text("Will this be ok? Type 'OK' (in caps) to confirm, and /text, /title or /type to return to previous selections.")
 
     return SENDING
@@ -214,10 +257,15 @@ def generatetext(update: Update, context: CallbackContext) -> int:
 def sendToChannel(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
     userid = user.id
+    messageDetails = 0
 
     # Send message
     message = userdict[userid].messageList[-1].generateMessage() + "<b>Post made by @" + user.username + '</b>'
-    messageDetails = context.bot.send_message(chat_id=CHANNELID, text = message, parse_mode=ParseMode.HTML)
+
+    if userdict[userid].messageList[-1].hasphoto:
+        messageDetails = context.bot.send_photo(chat_id = CHANNELID, photo = userdict[userid].messageList[-1].photoid, caption = message, parse_mode=ParseMode.HTML)
+    else:
+        messageDetails = context.bot.send_message(chat_id=CHANNELID, text = message, parse_mode=ParseMode.HTML)
 
     # Update id
     userdict[userid].messageList[-1].set_id(messageDetails.message_id)
@@ -243,10 +291,10 @@ def manageposts(update: Update, context: CallbackContext) -> int:
     userdict[update.message.from_user.id].setRequestedIndex(0)
     if text != "":
         update.message.reply_text("List of your submitted posts:\n" + text, parse_mode=ParseMode.HTML)
-        update.message.reply_text("Type the number of the post to manage.")
+        update.message.reply_text("Type the number of the post to manage.", reply_markup=ReplyKeyboardRemove())
         return POSTTOMANAGE
     else:
-        update.message.reply_text("You have no posts to manage. Press /start to return to the main menu.")
+        update.message.reply_text("You have no posts to manage. Press /start to return to the main menu.", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
 def checkpost(update: Update, context: CallbackContext) -> int:
@@ -256,13 +304,22 @@ def checkpost(update: Update, context: CallbackContext) -> int:
     userdict[userid].setRequestedIndex(index -1)
 
     try:
+
+        
+
         # Create Message
         message = userdict[userid].messageList[index - 1].generateMessage()
 
-        update.message.reply_text(message, parse_mode=ParseMode.HTML)
+        update.message.reply_text("Your post is: ")
+        if userdict[userid].messageList[index - 1].hasphoto:
+            photoid = userdict[userid].messageList[index - 1].photoid
+            context.bot.send_photo(chat_id = update.effective_chat.id, photo = photoid, caption = message, parse_mode=ParseMode.HTML)
+        else:
+            update.message.reply_text(message, parse_mode=ParseMode.HTML)
+
         reply_keyboard = [['Edit', 'Delete', 'Return to posts']]
         reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-        update.message.reply_text("What would you like to do?", reply_markup = reply_markup)
+        update.message.reply_text("What would you like to do? (Edit, Delete, Return to posts)", reply_markup = reply_markup)
 
         return MANAGEPOST
 
@@ -273,13 +330,13 @@ def checkpost(update: Update, context: CallbackContext) -> int:
 
 def getedittext(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("""<b>Input the edited text of your post</b>.
-    Recommended format:
+    Here's an example format that you can follow:
         <i>Details: (Condition etc)
         Looking to exchange for: (If applicable)
         Place for collection: (If applicable)
         Status: (If applicable)
         etc</i>
-<b>NOTE: For consistency purposes, the title cannot be edited.</b>""", parse_mode=ParseMode.HTML)
+<b>⚠️For consistency purposes, we do not allow the title to be edited.⚠️</b>""", parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
     
     return EDITPREVIEW
 
@@ -293,8 +350,15 @@ def generateedittext(update: Update, context: CallbackContext) -> int:
     #Update text
     userdict[userid].messageList[index].set_text(text)
 
+    message = userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>'
     update.message.reply_text("Your post will be changed to: ")
-    update.message.reply_text(userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>', parse_mode=ParseMode.HTML)
+
+    if userdict[userid].messageList[index].hasphoto:
+        photoid = userdict[userid].messageList[index].photoid
+        context.bot.send_photo(chat_id = update.effective_chat.id, photo = photoid, caption = message, parse_mode=ParseMode.HTML)
+    else:
+        update.message.reply_text(message, parse_mode=ParseMode.HTML)
+
     update.message.reply_text("Will this be ok? Type 'OK' (in caps) to confirm, or /cancel.")
 
     return EDIT
@@ -305,12 +369,19 @@ def editInChannel(update: Update, context: CallbackContext) -> int:
     userid = user.id
     index = userdict[userid].requestedIndex
     msgid = userdict[userid].messageList[index].id
+    edited = False
+
     # Send message
     message = userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>'
-    edited = context.bot.editMessageText(chat_id=CHANNELID, 
-        message_id = msgid, 
-        text = message, 
-        parse_mode=ParseMode.HTML)
+
+    if userdict[userid].messageList[index].hasphoto:
+        photoid = userdict[userid].messageList[index].photoid
+        edited = context.bot.editMessageCaption(chat_id = CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
+    else:
+        edited = context.bot.editMessageText(chat_id=CHANNELID, 
+            message_id = msgid, 
+            text = message, 
+            parse_mode=ParseMode.HTML)
 
     if (edited):
 
@@ -332,9 +403,8 @@ Hit /start to return to the main menu.""",
 
 
 def deletepostconfirmation(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text("""<b>Posts can only be deleted 48 hours within time of submission!!!</b>
-
-     Are you sure you want to delete? Type 'OK' (in caps) or /cancel""", parse_mode=ParseMode.HTML)
+    update.message.reply_text("""🚨<b>Posts can only be deleted 48 hours within time of submission!</b>
+Are you sure you want to delete? Type 'OK' (in caps) or /cancel""", parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
     return DELETEPOST
 
 
@@ -346,9 +416,9 @@ def deletepost(update: Update, context: CallbackContext) -> int:
     deleted = update.message.bot.deleteMessage(chat_id=CHANNELID, message_id=userdict[userid].messageList[index].id)
     if deleted:
         del userdict[userid].messageList[index]
-        update.message.reply_text("Post successfully deleted. /start to return to the main menu")
+        update.message.reply_text("Post successfully deleted 🙌. /start to return to the main menu")
     else:
-        update.message.reply_text("I failed to delete the message sed. /start to return to the main menu.")
+        update.message.reply_text("I failed to delete the message. You may prefer to edit the message instead. /start to return to the main menu.")
 
     return ConversationHandler.END
 
@@ -387,6 +457,7 @@ def softReset(update: Update, context: CallbackContext) -> None:
 #     Manage Posts? See list of posts => choose an index to view
         # Display the message: Get type of action
         #     Edit
+        #        Change or Remove photo
         #     Delete
         #     Go back
 
@@ -403,8 +474,9 @@ def main():
                        MessageHandler(Filters.regex('Share item'), gettitle),
                        MessageHandler(Filters.regex('Look for item'), gettitle),
                        MessageHandler(Filters.text, newpost)],
-            GETTEXT: [MessageHandler(Filters.text, gettext)],
-            GENERATETEXT: [MessageHandler(Filters.text, generatetext)],
+            GETTEXT: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, gettext)],
+            ASKFORPHOTO: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, askforphoto)],
+            GENERATETEXT: [CommandHandler('skip', generatetext), MessageHandler(Filters.photo, generatetext)],
             SENDING: [MessageHandler(Filters.regex('OK'), sendToChannel), CommandHandler('text', gettext),
                 CommandHandler('title', gettitle), CommandHandler('type', newpost)],
             POSTTOMANAGE: [MessageHandler(Filters.regex(r'\d+'), checkpost)],
@@ -412,7 +484,7 @@ def main():
                          MessageHandler(Filters.regex('Delete'), deletepostconfirmation),
                          MessageHandler(Filters.regex('Return to posts'), manageposts)],
             DELETEPOST: [MessageHandler(Filters.regex('OK'), deletepost)],
-            EDITPREVIEW: [MessageHandler(Filters.text, generateedittext)],
+            EDITPREVIEW: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, generateedittext)],
             EDIT: [MessageHandler(Filters.regex('OK'), editInChannel)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
