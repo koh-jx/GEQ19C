@@ -10,7 +10,7 @@ from telegram.ext import (
 )
 
 #Enable logging
-logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s', 
+logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
                     level=logging.INFO)
 
 
@@ -399,9 +399,6 @@ Hit /start to return to the main menu.""",
 
 
 
-
-
-
 def deletepostconfirmation(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("""🚨<b>Posts can only be deleted 48 hours within time of submission!</b>
 Are you sure you want to delete? Type 'OK' (in caps) or /cancel""", parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
@@ -457,7 +454,7 @@ def softReset(update: Update, context: CallbackContext) -> None:
 #     Manage Posts? See list of posts => choose an index to view
         # Display the message: Get type of action
         #     Edit
-        #        Change or Remove photo
+        #        Change or Remove photo TODO
         #     Delete
         #     Go back
 
@@ -510,14 +507,3 @@ if __name__ == '__main__':
 # https://core.telegram.org/bots/api#getfile
 # https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py
 # https://stackoverflow.com/questions/51222907/how-to-send-a-photo-via-python-telegram-bot
-
-
-
-
-
-# TODO
-# Add photo functions?
-# https://core.telegram.org/bots/api#sendphoto
-# https://core.telegram.org/bots/api#editmessagecaption
-# message isPhoto = true?
-# text will be sent as caption instead.
