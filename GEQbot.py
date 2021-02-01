@@ -8,6 +8,8 @@ from telegram.ext import (
     ConversationHandler,
     CallbackContext,
 )
+from telegram.files.inputmedia import InputMediaPhoto
+from telegram.files.photosize import PhotoSize
 
 #Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -21,7 +23,7 @@ userdict = {}
 
 #CONSTANTS
 #"Enums" for conversationHandler's Dictionary
-ACTION, GETTITLE, GETTEXT, GENERATETEXT, SENDING, POSTTOMANAGE, TYPEERROR, MANAGEPOST, DELETEPOST, EDITPREVIEW, EDIT, ASKFORPHOTO = range(12)
+ACTION, GETTITLE, GETTEXT, GENERATETEXT, SENDING, POSTTOMANAGE, MANAGEPOST, DELETEPOST, EDITPREVIEW, EDIT, ASKFORPHOTO, EDITPHOTO, EDITPHOTOPOST = range(13)
 
 # #Channel ID to forward messages to, bot must be Admin in the channel
 # CHANNELID = -1001475820789
@@ -204,8 +206,9 @@ def gettext(update: Update, context: CallbackContext) -> int:
 
     # Update title
     userdict[userid].messageList[-1].set_title(title)
+    update.message.reply_text("Title saved!")
 
-    update.message.reply_text("""<b>Input the text of your post. (or /cancel)</b>
+    update.message.reply_text("""<b>Now input the text of your post. (or /cancel)</b>
     Recommended format:
         <i>Details: (Condition etc)
         Looking to exchange for: (If applicable)
@@ -224,21 +227,24 @@ def askforphoto(update: Update, context: CallbackContext) -> int:
     #Update text
     userdict[userid].messageList[-1].set_text(text)
 
-    update.message.reply_text("Do you want to attach a picture along with the post? Send a picture, or /skip this step.")
+    update.message.reply_text("""<b>Do you want to attach a picture along with the post? </b>
+Send a picture, or /skip this step.
+
+<b>⚠️NOTE: This decision is final: Telegram currently does not conversion from photo to text posts. 
+(You can still edit the text/photo after submission)</b>⚠️""", parse_mode=ParseMode.HTML)
     return GENERATETEXT
 
 
 def generatetext(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user 
     userid = user.id
-    result = update.message.text       # TESTING, if its a photo, of type None, if not its "/skip"
+    result = update.message.text       # if its a photo, of type None, if not its "/skip"
     
     #Update Photo IF ANY
     if result == None:
         userdict[userid].messageList[-1].set_hasphoto()
         photoid = context.bot.getFile(update.message.photo[-1].file_id).file_id
         userdict[userid].messageList[-1].set_photoid(photoid)
-        update.message.reply_text(photoid)
 
     text = userdict[userid].messageList[-1].generateMessage() + "<b>Post made by @" + user.username + '</b>'
 
@@ -297,6 +303,8 @@ def manageposts(update: Update, context: CallbackContext) -> int:
         update.message.reply_text("You have no posts to manage. Press /start to return to the main menu.", reply_markup=ReplyKeyboardRemove())
         return ConversationHandler.END
 
+
+
 def checkpost(update: Update, context: CallbackContext) -> int:
     user = update.message.from_user
     index = int(re.sub("[^0-9]", "", update.message.text))
@@ -304,9 +312,6 @@ def checkpost(update: Update, context: CallbackContext) -> int:
     userdict[userid].setRequestedIndex(index -1)
 
     try:
-
-        
-
         # Create Message
         message = userdict[userid].messageList[index - 1].generateMessage()
 
@@ -316,10 +321,15 @@ def checkpost(update: Update, context: CallbackContext) -> int:
             context.bot.send_photo(chat_id = update.effective_chat.id, photo = photoid, caption = message, parse_mode=ParseMode.HTML)
         else:
             update.message.reply_text(message, parse_mode=ParseMode.HTML)
-
-        reply_keyboard = [['Edit', 'Delete', 'Return to posts']]
-        reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
-        update.message.reply_text("What would you like to do? (Edit, Delete, Return to posts)", reply_markup = reply_markup)
+        
+        if userdict[userid].messageList[index - 1].hasphoto:
+            reply_keyboard = [['Edit', 'Delete', 'Add/Change/Remove Photo', 'Return to posts']]
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+            update.message.reply_text("What would you like to do? (Edit, Delete, Add/Change/Remove Photo, Return to posts)", reply_markup = reply_markup)
+        else:
+            reply_keyboard = [['Edit', 'Delete', 'Return to posts']]
+            reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)
+            update.message.reply_text("What would you like to do? (Edit, Delete, Return to posts)", reply_markup = reply_markup)
 
         return MANAGEPOST
 
@@ -375,7 +385,6 @@ def editInChannel(update: Update, context: CallbackContext) -> int:
     message = userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>'
 
     if userdict[userid].messageList[index].hasphoto:
-        photoid = userdict[userid].messageList[index].photoid
         edited = context.bot.editMessageCaption(chat_id = CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
     else:
         edited = context.bot.editMessageText(chat_id=CHANNELID, 
@@ -394,6 +403,68 @@ def editInChannel(update: Update, context: CallbackContext) -> int:
 
 Hit /start to return to the main menu.""", 
         parse_mode=ParseMode.HTML)
+    
+    else:
+        update.message.reply_text("Failed to edit your message. /start to return to the main menu.")
+
+    return ConversationHandler.END
+
+
+
+def editphoto(update: Update, context: CallbackContext) -> int:
+    update.message.reply_text("Send your new photo. (or /cancel)")
+    return EDITPHOTO
+
+
+def generatenewphoto(update: Update, context: CallbackContext) -> int:
+    user = update.message.from_user 
+    userid = user.id
+    result = update.message.text
+    index = userdict[userid].requestedIndex
+    msgid = userdict[userid].messageList[index].id
+    photoid = context.bot.getFile(update.message.photo[-1].file_id).file_id
+    userdict[userid].messageList[index].set_photoid(photoid)
+    text = userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>'
+
+    update.message.reply_text("Your post is: ")
+    if userdict[userid].messageList[index].hasphoto:
+        photoid = userdict[userid].messageList[index].photoid
+        context.bot.send_photo(chat_id = update.effective_chat.id, photo = photoid, caption = text, parse_mode=ParseMode.HTML)
+    else:
+        update.message.reply_text(text, parse_mode=ParseMode.HTML)
+
+    update.message.reply_text("Will this be ok? Type 'OK' (in caps) to confirm, or /cancel.")
+    return EDITPHOTOPOST
+
+
+def editPhotoInChannel(update: Update, context: CallbackContext) -> int:
+    user = update.message.from_user 
+    userid = user.id
+    index = userdict[userid].requestedIndex
+
+    msgid = userdict[userid].messageList[index].id
+    photoid = userdict[userid].messageList[index].photoid
+    message = userdict[userid].messageList[index].generateMessage() + "<b>Post made by @" + user.username + '</b>'
+
+
+    result = context.bot.editMessageMedia(chat_id = CHANNELID, message_id = msgid, media = InputMediaPhoto(media = photoid))
+    result.photo = [result.photo[-1]]
+    edited = context.bot.editMessageCaption(chat_id = CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
+    print(edited)        
+
+
+    if (edited):
+        link = "https://t.me/c/" + str(CHANNELLINKID) + "/" + str(msgid)
+
+        update.message.reply_text("""Edited! Thanks for using the channel! 💖 
+
+<b>View your post here: """ + link + "</b>" + 
+        """\n\nPlease remember to update/delete your post once your transaction is complete.
+
+Hit /start to return to the main menu.""", 
+        parse_mode=ParseMode.HTML)
+    else:
+        update.message.reply_text("Failed to edit your message. /start to return to the main menu.")
 
     return ConversationHandler.END
 
@@ -426,7 +497,7 @@ def cancel(update: Update, context: CallbackContext) -> int:
     update.message.reply_text(
         'Process cancelled. /start to return to the main menu.', reply_markup=ReplyKeyboardRemove()
     )
-
+    userdict[update.message.from_user.id].clearUnsentMessages()
     return ConversationHandler.END
 
 
@@ -479,10 +550,13 @@ def main():
             POSTTOMANAGE: [MessageHandler(Filters.regex(r'\d+'), checkpost)],
             MANAGEPOST: [MessageHandler(Filters.regex('Edit'), getedittext), 
                          MessageHandler(Filters.regex('Delete'), deletepostconfirmation),
+                         MessageHandler(Filters.regex('Add/Change/Remove Photo'), editphoto),
                          MessageHandler(Filters.regex('Return to posts'), manageposts)],
             DELETEPOST: [MessageHandler(Filters.regex('OK'), deletepost)],
             EDITPREVIEW: [CommandHandler('cancel', cancel), MessageHandler(Filters.text, generateedittext)],
-            EDIT: [MessageHandler(Filters.regex('OK'), editInChannel)]
+            EDIT: [MessageHandler(Filters.regex('OK'), editInChannel)],
+            EDITPHOTO: [CommandHandler('remove', generatenewphoto), MessageHandler(Filters.photo, generatenewphoto)],
+            EDITPHOTOPOST: [MessageHandler(Filters.regex('OK'), editPhotoInChannel)]
         },
         fallbacks=[CommandHandler('cancel', cancel)],
     )
@@ -502,7 +576,6 @@ if __name__ == '__main__':
 
 
 
-# Current bot does not support photos (Uploading photos and forwarding with messages is complex)
 # Useful Resources:
 # https://core.telegram.org/bots/api#getfile
 # https://github.com/python-telegram-bot/python-telegram-bot/blob/master/examples/conversationbot.py
