@@ -15,6 +15,9 @@ Talk to the bot @ToUpdateThisLink, or visit the Channel @ToUpdateThisLink.
  - Adds photos to your posts to better suit your needs
  - Edit, Delete or Change the Photo of your previous posts
  - Uses inline keyboard functionality to ensure seamless transitions through the process
+ - Update a change the status of posts
+ - Using a separate admin channel, track changes in statuses and deletions, hence
+ measuring number of transactions.
 
 <p align="middle">
  <img src="https://i.imgur.com/2J2MXnC.jpg" height=450>
@@ -29,6 +32,9 @@ Using Telegram's in-app bot Botfather, generate a key to set up your bot, and se
  ``` 
  updater = Updater(token = TOKEN, use_context = True)
  ```
+## Possible Future Features
+Automatically creates a Telegram Channel via a Command?
+
  
 
 ## Credits
