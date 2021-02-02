@@ -23,7 +23,9 @@ class User:
         self.clearUnsentMessages()
         text = ""
         for i in range(len(self.messageList)):
-            text += (str(i + 1) + ": " + self.messageList[i].title + '\n')
+            message = self.messageList[i]
+            status = message.getstatus()
+            text += (str(i + 1) + ": " + message.title + " " + status + '\n')
         return text
 
     # Deletes all unused messages in the messageList (To reduce space used, and easier listMessages functionality)

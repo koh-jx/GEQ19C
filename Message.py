@@ -18,6 +18,9 @@ class Message:
         self.photoid = 0
         self.hasphoto = False
 
+        #Status of the post, 0 is available/pending as default, 1 is completed/on loan, 2 is redacted
+        self.status = 0
+
     # MUTATORS
     def set_title(self, title):
         self.title = title
@@ -39,7 +42,7 @@ class Message:
             self.hasphoto = True
 
     #Generate the template message based on Message contents
-    def generateMessage(self):
+    def generateMessage(self, username):
         type = ""
         if (self.type == 1):
             type = "OFFERING"
@@ -52,4 +55,28 @@ class Message:
         
         title = self.title
         text = self.text
-        return '<b>' + type + '</b>\n<b>' + title + '</b>\n' + "====================\n" + text + '\n====================\n'
+        message = '<b>' + type + '</b>\n<b>' + title + '</b>\n' + "====================\n<b>" + self.getstatus() + "</b>\n" + text + '\n====================\n'
+        if self.status == 0 or self.status == 1:
+            message += "<b>Post made by @" + username + '</b>'
+            return message
+        elif self.status == 2:
+            return '<b>' + type + '</b>\n<b>' + title + '</b>\n' + "====================\n<b>" + self.getstatus() + "</b>"
+        
+
+    
+    def getstatus(self):
+        if self.status == 0:
+            if self.type == 1 or self.type == 2:
+                return "[Available]"
+            elif self.type == 3:
+                return "[Pending]"
+        elif self.status == 1:
+            if self.type == 1 or self.type == 3:
+                return "[Completed]"
+            elif self.type == 2:
+                return "[On Loan]"
+        elif self.status == 2:
+            return "[Post Redacted]"
+        
+    def changestatus(self, newstatus):
+        self.status = newstatus
