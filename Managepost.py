@@ -235,6 +235,8 @@ def deletepost(update: Update, context: CallbackContext) -> int:
 
     deleted = update.message.bot.deleteMessage(chat_id=globals.CHANNELID, message_id=subfile.get_userdict()[userid].messageList[index].id)
     if deleted:
+        text = subfile.get_userdict()[userid].messageList[index].generateMessage(user.username)
+        context.bot.send_message(chat_id=globals.ADMINCHANNELID, text = "DELETION TEXT BY @" + update.message.from_user.username + ": \n"  + text)
         del subfile.get_userdict()[userid].messageList[index]
         update.message.reply_text("Post successfully deleted 🙌. /start to return to the main menu")
     else:
@@ -297,11 +299,9 @@ def updatestatus(update: Update, context: CallbackContext) -> int:
         target.changestatus(2)
 
     message = target.generateMessage(user.username)
-    print(message)
+
     link = "https://t.me/c/" + str(globals.CHANNELLINKID) + "/" + str(msgid)
     
-    print("THERE")
-
     if subfile.get_userdict()[userid].messageList[index].hasphoto:
         context.bot.editMessageCaption(chat_id = globals.CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
     else:
@@ -312,9 +312,7 @@ def updatestatus(update: Update, context: CallbackContext) -> int:
             ) 
             
 
-    print("EVERYWHERE")
-
-    context.bot.send_message(chat_id=globals.ADMINCHANNELID, text = "STATUS UPDATE BY @" + user.username + ": "  + message + "\n" + action)
+    context.bot.send_message(chat_id=globals.ADMINCHANNELID, text = "STATUS UPDATE BY @" + user.username + ": "  + message + "\n" + action, parse_mode=ParseMode.HTML)
 
     reply_keyboard = [['Return to post 🔙']]
     reply_markup=ReplyKeyboardMarkup(reply_keyboard, one_time_keyboard=True)

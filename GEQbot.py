@@ -14,7 +14,7 @@ logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s
 import Fallback
 from globals import (ACTION, GETTITLE, GETTEXT, GENERATETEXT, SENDING, POSTTOMANAGE, 
                     MANAGEPOST, DELETEPOST, EDITPREVIEW, EDIT, ASKFORPHOTO, EDITPHOTO, EDITPHOTOPOST, CHANGESTATUS,
-                    DELETEPOSTCONFIRM, TOKEN)
+                    DELETEPOSTCONFIRM, FEEDBACK, TOKEN)
 import subfile
 from Makepost import (
     start,
@@ -24,7 +24,9 @@ from Makepost import (
     askforphoto,
     generatetext,
     sendToChannel,
-    about
+    about,
+    feedback,
+    postfeedback
 )
 from Managepost import (
     manageposts,
@@ -51,7 +53,8 @@ def main():
         states={
             ACTION: [MessageHandler(Filters.regex('Make Post 📬'), newpost), 
                     MessageHandler(Filters.regex('Manage Posts 💼'), manageposts),
-                    MessageHandler(Filters.regex('Help/About ❓'), about)],   
+                    MessageHandler(Filters.regex('Help/About ❓'), about),
+                    MessageHandler(Filters.regex('Give Feedback/Contact Us 📣'), feedback)],   
 
             GETTITLE: [CommandHandler('cancel', Fallback.cancel), 
                        MessageHandler(Filters.regex('Put up item ✉️'), gettitle), 
@@ -101,7 +104,9 @@ def main():
                            MessageHandler(Filters.regex('I found my item ✔️'), updatestatus),
                            MessageHandler(Filters.regex('Put the post back up'), updatestatus),
                            MessageHandler(Filters.regex('The item has been returned ✔️'), updatestatus),
-                           MessageHandler(Filters.regex('Withdraw Post ❌'), updatestatus)]
+                           MessageHandler(Filters.regex('Withdraw Post ❌'), updatestatus)],
+            FEEDBACK: [CommandHandler('cancel', Fallback.cancel), 
+                       MessageHandler(Filters.text, postfeedback)]
         },
         fallbacks=[CommandHandler('cancel', Fallback.cancel)],
     )
