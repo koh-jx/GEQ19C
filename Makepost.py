@@ -58,9 +58,9 @@ def gettitle(update: Update, context: CallbackContext) -> int:
     userid = user.id
     type = gettype(option)
 
-
-    # Create Message
-    subfile.get_userdict()[userid].addMessage(type)
+    if option != "/title":
+        # Create Message
+        subfile.get_userdict()[userid].addMessage(type)
 
     update.message.reply_text("Input the title of your post. (or /cancel)", reply_markup=ReplyKeyboardRemove())
 
@@ -78,9 +78,10 @@ def gettext(update: Update, context: CallbackContext) -> int:
     title = checkForAngleBrackets(update.message.text)
     userid = user.id
 
+    if title != "/text":
     # Update title
-    subfile.get_userdict()[userid].messageList[-1].set_title(title)
-    update.message.reply_text("Title saved!")
+        subfile.get_userdict()[userid].messageList[-1].set_title(title)
+        update.message.reply_text("Title saved!")
 
     update.message.reply_text("""<b>Now input the text of your post. (or /cancel)</b>
     Recommended format:

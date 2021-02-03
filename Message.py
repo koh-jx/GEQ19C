@@ -43,6 +43,7 @@ class Message:
 
     #Generate the template message based on Message contents
     def generateMessage(self, username):
+        
         type = ""
         if (self.type == 1):
             type = "OFFERING"
@@ -52,7 +53,7 @@ class Message:
             type = "LOOKING FOR"
         else:
             type = "???"    #Should not happen
-        
+
         title = self.title
         text = self.text
         message = '<b>' + type + '</b>\n<b>' + title + '</b>\n' + "====================\n<b>" + self.getstatus() + "</b>\n" + text + '\n====================\n'
