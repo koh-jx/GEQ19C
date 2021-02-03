@@ -8,7 +8,7 @@ We link people of common needs together as a means to communicate directly, so a
 
 ## Visit Us
 Have something to share or give away? Looking for any items? Communicate with NUSebot to create a post in the Channel!
-Talk to the bot @ToUpdateThisLink, or visit the Channel @ToUpdateThisLink.
+Talk to the bot @TheNUSeBot, or visit the Channel https://t.me/GEQ19C.
 
 ## What can NUSebot do?
  - Make and send automatically-crafted posts to the channel
@@ -32,6 +32,10 @@ Using Telegram's in-app bot Botfather, generate a key to set up your bot, and se
  ``` 
  updater = Updater(token = TOKEN, use_context = True)
  ```
+ Create 2 new channels: 1 for the Administrative Logs, and the other for the bot to send the posts to. Get the Channel IDs (From the web URL) and paste it into the fields in globals.py.
+ 
+ Start GEQbot.py and click /start on the bot to start interacting with the bot.
+ 
 ## Possible Future Features
 Automatically creates a Telegram Channel via a Command?
 
