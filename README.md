@@ -1,4 +1,4 @@
-![NUSe](https://i.imgur.com/QQixcmK.png)
+![NUSe](https://i.imgur.com/1bJTVAQ.png)
 ## A Passion Project brought to you by Team GEQ19C.
 
 ## Our Mission
