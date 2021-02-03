@@ -1,5 +1,5 @@
-# NUSe
-## A Project brought to you by Team GEQ19C.
+![NUSe](https://i.imgur.com/QQixcmK.png)
+## A Passion Project brought to you by Team GEQ19C.
 
 ## Our Mission
 NUSe is an Telegram Bot to help develop a culture of reusing and reducing waste generation within the National University of Singapore, through the process of mutual exchange. 
