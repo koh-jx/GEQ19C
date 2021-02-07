@@ -1,6 +1,7 @@
 # from User import User
 import re
 from telegram import ReplyKeyboardMarkup, ReplyKeyboardRemove, Update, ParseMode
+import telegram
 from telegram.ext import (
     ConversationHandler,
     CallbackContext,
@@ -71,13 +72,7 @@ def checkpost(update: Update, context: CallbackContext) -> int:
 #========================================================================
 
 def getedittext(update: Update, context: CallbackContext) -> int:
-    update.message.reply_text("""<b>Input the edited text of your post</b>.
-    Here's an example format that you can follow:
-        <i>Details: (Condition etc)
-        Looking to exchange for: (If applicable)
-        Place for collection: (If applicable)
-        Status: (If applicable)
-        etc</i>
+    update.message.reply_text("""<b>Type in anything you want to say in your post.</b>.
 <b>⚠️For consistency purposes, we do not allow the title to be edited.⚠️</b>""", parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
     
     return globals.EDITPREVIEW
@@ -116,13 +111,17 @@ def editInChannel(update: Update, context: CallbackContext) -> int:
     # Send message
     message = subfile.get_userdict()[userid].messageList[index].generateMessage(user.username)
 
-    if subfile.get_userdict()[userid].messageList[index].hasphoto:
-        edited = context.bot.editMessageCaption(chat_id = globals.CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
-    else:
-        edited = context.bot.editMessageText(chat_id=globals.CHANNELID, 
-            message_id = msgid, 
-            text = message, 
-            parse_mode=ParseMode.HTML)
+    try:
+        if subfile.get_userdict()[userid].messageList[index].hasphoto:
+            edited = context.bot.editMessageCaption(chat_id = globals.CHANNELID, message_id = msgid, caption = message, parse_mode=ParseMode.HTML)
+        else:
+            edited = context.bot.editMessageText(chat_id=globals.CHANNELID, 
+                message_id = msgid, 
+                text = message, 
+                parse_mode=ParseMode.HTML)
+    except telegram.error.BadRequest:
+        update.message.reply_text("The message cannot be edited. /start to return to the main menu.")
+        return ConversationHandler.END
 
     if (edited):
 
@@ -137,7 +136,7 @@ Hit /start to return to the main menu.""",
         parse_mode=ParseMode.HTML)
     
     else:
-        update.message.reply_text("Failed to edit your message. /start to return to the main menu.")
+        update.message.reply_text("Failed to edit your message. Your edited message may have been the same as the original, or that the post was redacted. /start to return to the main menu.")
 
     return ConversationHandler.END
 
@@ -293,6 +292,7 @@ def updatestatus(update: Update, context: CallbackContext) -> int:
 
     if action == 'My item is taken ✔️' or action == 'It is currently loaned ✔️' or action == 'I found my item ✔️':
         target.changestatus(1)
+        subfile.counttransactions += 1
     elif action == 'Put the post back up' or action == 'The item has been returned ✔️':
         target.changestatus(0)
     elif action == 'Withdraw Post ❌':

@@ -1,4 +1,5 @@
 import logging
+
 from telegram.ext import (
     Updater,
     CommandHandler,
@@ -6,6 +7,12 @@ from telegram.ext import (
     Filters,
     ConversationHandler,
 )
+
+#For Webhook
+import os
+
+#For auto-saving userdict
+from thread2 import autoThread
 
 #Enable logging
 logging.basicConfig(format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
@@ -45,8 +52,11 @@ from Managepost import (
 )
 
 def main():
+    PORT = int(os.environ.get('PORT', 5000))
     updater = Updater(token = TOKEN, use_context = True)
     dispatcher = updater.dispatcher
+
+    thread2 = autoThread()
     
     conv_handler = ConversationHandler(
         entry_points=[CommandHandler('start', start)],
@@ -114,9 +124,20 @@ def main():
     dispatcher.add_handler(conv_handler)
 
     # Admin commands
-    dispatcher.add_handler(CommandHandler('adminsoftreset', subfile.softReset))
+    dispatcher.add_handler(CommandHandler('softreset', subfile.softReset))
+    dispatcher.add_handler(CommandHandler('save', subfile.save))
+    dispatcher.add_handler(CommandHandler('read', subfile.read))
+    dispatcher.add_handler(CommandHandler('checkcount', subfile.checkcount))
+    dispatcher.add_handler(CommandHandler('resetcount', subfile.resetcount))
 
-    updater.start_polling()
+    subfile.unpickle_file()
+    thread2.start()
+
+    # updater.start_polling()
+    updater.start_webhook(listen="0.0.0.0",
+                          port=int(PORT),
+                          url_path=TOKEN)
+    updater.bot.setWebhook('https://stormy-bayou-05179.herokuapp.com/' + TOKEN)
     updater.idle()
 
 
