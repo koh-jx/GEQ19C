@@ -19,6 +19,7 @@ Talk to the bot @TheNUSeBot, or visit the Channel https://t.me/GEQ19C.
  - Using a separate admin channel, track changes in statuses and deletions, hence
  measuring number of transactions.
 
+Note: Photos shown are not from the final product.
 <p align="middle">
  <img src="https://i.imgur.com/2J2MXnC.jpg" height=450>
  <img src="https://i.imgur.com/SS4tZl2.jpg" height=450>
@@ -27,6 +28,9 @@ Talk to the bot @TheNUSeBot, or visit the Channel https://t.me/GEQ19C.
 </p>
  
 ## Usage
+
+This bot is uploaded to Heroku using the Heroku CLI & Github Desktop
+
 ### Getting API Token
 Using Telegram's in-app bot Botfather, generate a key to set up your bot, and set it up in GEQBot.py main():
  ``` 
@@ -34,10 +38,15 @@ Using Telegram's in-app bot Botfather, generate a key to set up your bot, and se
  ```
  Create 2 new channels: 1 for the Administrative Logs, and the other for the bot to send the posts to. Get the Channel IDs (From the web URL) and paste it into the fields in globals.py.
  
- Start GEQbot.py and click /start on the bot to start interacting with the bot.
+ It is recommended to also create a Group chat at link it as a Discussion Chat on the main Channel.
+
+ The bot also uses Amazon's AWS S3 bucket to store its data (as a pickle), since Heroku doesn't store it for more than 24 Hours.
+ Find out more here: https://devcenter.heroku.com/articles/s3
+ 
+ Start GEQbot.py and click /start on the bot to start interacting with the bot. :D
  
 ## Possible Future Features
-Automatically creates a Telegram Channel via a Command?
+Suggest some here :)
 
  
 
