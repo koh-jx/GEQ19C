@@ -84,6 +84,11 @@ def gettext(update: Update, context: CallbackContext) -> int:
         update.message.reply_text("Title saved!")
 
     update.message.reply_text("""<b>You can type anything you want to add in your post. (or /cancel)</b>
+Example template would be:
+    <i>***Place of Stay***
+    Condition of item
+    Preferred meetup location (if applicable)
+    etc details </i>
 <b>⚠️Your username will be automatically added to the post for people to contact you.</b>⚠️""", parse_mode=ParseMode.HTML)
     
     return globals.ASKFORPHOTO

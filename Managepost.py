@@ -73,6 +73,11 @@ def checkpost(update: Update, context: CallbackContext) -> int:
 
 def getedittext(update: Update, context: CallbackContext) -> int:
     update.message.reply_text("""<b>Type in anything you want to say in your post.</b>.
+Example template would be:
+    <i>***Place of Stay***
+    Condition of item
+    Preferred meetup location (if applicable)
+    etc details </i>
 <b>⚠️For consistency purposes, we do not allow the title to be edited.⚠️</b>""", parse_mode=ParseMode.HTML, reply_markup=ReplyKeyboardRemove())
     
     return globals.EDITPREVIEW
