@@ -15,8 +15,8 @@ Talk to the bot @TheNUSeBot, or visit the Channel https://t.me/GEQ19C.
  - Adds photos to your posts to better suit your needs
  - Edit, Delete or Change the Photo of your previous posts
  - Uses inline keyboard functionality to ensure seamless transitions through the process
- - Update a change the status of posts
- - Using a separate admin channel, track changes in statuses and deletions, hence
+ - Update any changes to the status of posts
+ - [Admin function] Using a separate admin channel, track changes in statuses and deletions, hence
  measuring number of transactions.
 
 Note: Photos shown are not from the final product.
